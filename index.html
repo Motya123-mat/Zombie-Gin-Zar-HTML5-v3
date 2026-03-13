@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Zombie Gin Zar</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f1f0f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #game {
+            width: 100vw;
+            height: 100vh;
+            max-width: 900px;
+            max-height: 500px;
+            background: #2a3a2a;
+            border-radius: 20px;
+            box-shadow: 0 0 30px #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 3px solid #5f8f5f;
+        }
+        @media (orientation: portrait) {
+            #game {
+                width: 100vh;
+                height: 100vw;
+                transform: rotate(90deg);
+                transform-origin: center center;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                translate: -50% -50%;
+            }
+        }
+        #top-bar {
+            background: #1e2b1e;
+            color: #cfc;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #5f8f5f;
+            font-size: clamp(14px, 4vw, 20px);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        #currency-zombie { color: #ffd966; }
+        #currency-rainbow { color: #ff99ff; margin-left: 10px; }
+        #player-name { color: #b3ffb3; }
+        #tabs {
+            display: flex;
+            background: #1f2f1f;
+            border-bottom: 2px solid #5f8f5f;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1 0 auto;
+            background: #2f422f;
+            border: none;
+            border-right: 1px solid #5f8f5f;
+            color: #ddd;
+            padding: 8px 0;
+            font-size: clamp(12px, 3vw, 16px);
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .tab-btn:last-child { border-right: none; }
+        .tab-btn.active {
+            background: #3f5f3f;
+            color: #fff;
+            box-shadow: inset 0 -3px 0 #afaf5f;
+        }
+        #screen {
+            flex: 1;
+            background: #253225;
+            padding: 10px;
+            overflow-y: auto;
+            color: #efefef;
+            -webkit-overflow-scrolling: touch;
+        }
+        .screen {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+        }
+        .screen.active { display: flex; }
+        .grid-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .item-card {
+            background: #2d402d;
+            border: 2px solid #5f7f5f;
+            border-radius: 10px;
+            padding: 8px;
+            width: calc(33% - 8px);
+            min-width: 110px;
+            text-align: center;
+            color: #fff;
+            box-shadow: 0 3px 0 #1f2f1f;
+            position: relative;
+        }
+        .item-card button {
+            background: #5f8f5f;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin-top: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .item-card button:disabled {
+            background: #3f5f3f;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .repair-btn {
+            background: #afaf5f !important;
+            color: #1f2f1f !important;
+            font-size: 12px;
+            padding: 3px 6px !important;
+            margin-top: 4px !important;
+        }
+        .mode-btn {
+            background: #3f5f3f;
+            border: 2px solid #afaf5f;
+            color: white;
+            font-size: clamp(18px, 5vw, 28px);
+            padding: 15px 10px;
+            margin: 8px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .back-btn {
+            background: #5f3f3f;
+            border: 2px solid #af5f5f;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            align-self: flex-start;
+            margin-bottom: 10px;
+        }
+        .promo-input {
+            display: flex;
+            gap: 5px;
+            margin: 15px 0;
+        }
+        .promo-input input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: none;
+            background: #3a4f3a;
+            color: #fff;
+            font-size: 16px;
+        }
+        .promo-input button {
+            background: #afaf5f;
+            border: none;
+            border-radius: 20px;
+            padding: 0 20px;
+            font-weight: bold;
+            color: #1f2f1f;
+            cursor: pointer;
+        }
+        .fight-area {
+            text-align: center;
+            background: #1f2f1f;
+            border-radius: 20px;
+            padding: 15px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .zombie-stats {
+            background: #2f422f;
+            border-radius: 20px;
+            padding: 15px;
+            border: 2px solid #8faf8f;
+        }
+        .attack-btn {
+            background: #af2f2f;
+            border: none;
+            color: white;
+            font-size: 28px;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            margin: 15px;
+            cursor: pointer;
+        }
+        .weapon-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .weapon-option {
+            background: #3f5f3f;
+            border: 2px solid #8faf8f;
+            border-radius: 25px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #fff;
+        }
+        .weapon-option.selected {
+            background: #afaf5f;
+            border-color: #ffff8f;
+            color: #1f2f1f;
+            font-weight: bold;
+        }
+        .weapon-option.cooldown {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .message-box {
+            background: #2f2f1f;
+            border: 2px solid #afaf5f;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #ffffaf;
+        }
+        .profile-info {
+            background: #2f422f;
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid #8faf8f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .avatar-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .avatar-option {
+            font-size: 48px;
+            cursor: pointer;
+            padding: 5px;
+            border: 3px solid transparent;
+            border-radius: 15px;
+        }
+        .avatar-option.selected {
+            border-color: #afaf5f;
+            background: #3f5f3f;
+        }
+        .edit-name {
+            display: flex;
+            gap: 5px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .edit-name input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            background: #3a4f3a;
+            color: #fff;
+        }
+        .edit-name button {
+            background: #5f8f5f;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .trade-area {
+            text-align: center;
+        }
+        .trade-btn {
+            background: #5f8f5f;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        .player-item {
+            background: #2f422f;
+            border: 2px solid #5f7f5f;
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .player-item button {
+            background: #afaf5f;
+            border: none;
+            border-radius: 15px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #password-dialog {
+            margin-top: 10px;
+        }
+        #password-dialog input {
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            background: #3a4f3a;
+            color: #fff;
+            margin-right: 5px;
+        }
+        #password-dialog button {
+            background: #afaf5f;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="game">
+    <div id="top-bar">
+        <span id="player-name">Gin Zar</span>
+        <span>
+            <span id="currency-zombie">💰 <span id="money">1000</span></span>
+            <span id="currency-rainbow">🌈 <span id="rainbow-money">0</span></span>
+        </span>
+    </div>
+    <div id="tabs">
+        <button class="tab-btn active" data-tab="main">🏠 Главная</button>
+        <button class="tab-btn" data-tab="shop">🛒 Магазин</button>
+        <button class="tab-btn" data-tab="limited">✨ Лимитированный</button>
+        <button class="tab-btn" data-tab="inventory">🎒 Инвентарь</button>
+        <button class="tab-btn" data-tab="units">⚙️ Юниты</button>
+        <button class="tab-btn" data-tab="promo">🎁 Промо</button>
+        <button class="tab-btn" data-tab="trade">🔄 Обмен</button>
+        <button class="tab-btn" data-tab="profile">👤 Профиль</button>
+    </div>
+    <div id="screen">
+        <!-- Главный экран -->
+        <div id="main-screen" class="screen active">
+            <button class="mode-btn" data-mode="kill25">🔫 Убей 25 зомби</button>
+            <button class="mode-btn" data-mode="farm">💰 Фарм денег (вход 15000)</button>
+            <button class="mode-btn" data-mode="tower">🛡️ Tower Defense</button>
+        </div>
+        <!-- Магазин (Zombie Coins) -->
+        <div id="shop-screen" class="screen">
+            <h2>🛒 Магазин (Zombie Coins)</h2>
+            <div id="weapon-shop" class="grid-list"></div>
+        </div>
+        <!-- Лимитированный магазин (Rainbow Coins) -->
+        <div id="limited-screen" class="screen">
+            <h2>✨ Лимитированный магазин</h2>
+            <div id="limited-shop" class="grid-list"></div>
+        </div>
+        <!-- Инвентарь -->
+        <div id="inventory-screen" class="screen">
+            <h2>🎒 Инвентарь</h2>
+            <div id="inventory-list" class="grid-list"></div>
+        </div>
+        <!-- Юниты -->
+        <div id="units-screen" class="screen">
+            <h2>⚙️ Юниты для Tower Defense</h2>
+            <div id="units-shop" class="grid-list"></div>
+        </div>
+        <!-- Промокоды -->
+        <div id="promo-screen" class="screen">
+            <h2>🎁 Промокоды</h2>
+            <div class="promo-input">
+                <input type="text" id="promo-code" placeholder="Введите код">
+                <button id="apply-promo">Активировать</button>
+            </div>
+            <div id="promo-message" class="message-box"></div>
+            <div id="password-dialog" style="display: none;">
+                <input type="password" id="promo-password" placeholder="Пароль">
+                <button id="submit-password">OK</button>
+            </div>
+        </div>
+        <!-- Обмен -->
+        <div id="trade-screen" class="screen">
+            <h2>🔄 Обмен с игроками</h2>
+            <div class="trade-area">
+                <button class="trade-btn" id="find-players">🔍 Найти игроков рядом</button>
+                <div id="player-list" class="player-list"></div>
+                <div id="trade-status"></div>
+                <div id="trade-offer" style="display: none;">
+                    <h3>Предложение обмена</h3>
+                    <select id="trade-weapon"></select>
+                    <input type="number" id="trade-zombie" placeholder="Zombie Coins" min="0">
+                    <input type="number" id="trade-rainbow" placeholder="Rainbow Coins" min="0">
+                    <button id="send-offer">Отправить</button>
+                </div>
+            </div>
+        </div>
+        <!-- Профиль -->
+        <div id="profile-screen" class="screen">
+            <h2>👤 Профиль игрока</h2>
+            <div class="profile-info">
+                <div class="avatar-selector" id="avatar-selector">
+                    <span class="avatar-option" data-avatar="🧟">🧟</span>
+                    <span class="avatar-option" data-avatar="🧑">🧑</span>
+                    <span class="avatar-option" data-avatar="👨‍🚀">👨‍🚀</span>
+                </div>
+                <div class="edit-name">
+                    <input type="text" id="new-name" placeholder="Новое имя">
+                    <button id="change-name-btn">Изменить</button>
+                </div>
+                <p>Текущее имя: <span id="current-name"></span> <span id="current-avatar"></span></p>
+                <p>Пройдено волн в Tower Defense: <span id="profile-waves">0</span></p>
+            </div>
+        </div>
+        <!-- Экран битвы -->
+        <div id="battle-screen" class="screen">
+            <button class="back-btn" id="back-to-main">⬅ Назад</button>
+            <div id="battle-content" class="fight-area"></div>
+        </div>
+    </div>
+</div>
+<script src="security.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
